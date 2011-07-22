@@ -1,0 +1,202 @@
+/* tableのサイズなど調整 */
+table.autofilter {
+   border: 1px solid grey;
+   border-spacing:0px;
+   border-collapse: separate;
+}
+
+table.autofilter > tbody, table.autofilter > thead, table.autofilter > tfoot {
+   display:block;
+}
+
+table.autofilter > tbody {
+   overflow-x:hidden;
+   overflow-y:scroll;
+   height: 100px;
+   background-color:white;
+}
+
+/* Autofilter の th 表示調整用 */
+table.autofilter > thead > th, table.autofilter > tfoot > th {
+   cursor:pointer;
+   word-wrap:break-word;
+   padding: 6px 0px;
+}
+th.autofilter-filter {
+   background-color: #81B419 !important;
+}
+th.autofilter-sort {
+   background-color: #D3E0EF !important;
+}
+
+table.autofilter > tfoot {
+   overflow-y:scroll;
+   overflow-x:hidden;
+   height: 28px;
+   cursor:pointer;
+}
+table.autofilter > tfoot.hide {
+   display: none;
+}
+table.autofilter > tfoot > th {
+   vertical-align: top;
+   background-color: #F9F8E3;
+   overflow-x:hidden;
+   text-align: left;
+   font-size: 60%;
+}
+/* ff3で色が付かない？ */
+table.autofilter tr.odd td {
+   background-color:#f0f0f0;
+}
+/* 行が光る */
+table.autofilter tr:hover td {
+   background-color:#ffffd0;
+   cursor:pointer;
+}
+/* 内容の密度をもう少しあげる */
+table.autofilter td {
+   padding: 2px 2px 2px 4px;
+   height: 28px;
+   overflow-y: visible;
+   min-width: 20px;
+}
+/* 状態の幅を狭める */
+table.autofilter td.status div {
+   width:auto;
+}
+table.autofilter td.priority {
+   width: 38px;
+}
+
+/* Autofilterのステータス表示用 */
+span.autofilter-status-filter {
+   color: red;
+}
+span.autofilter-status-sort {
+   color: blue;
+}
+
+/* Autofilterのメニュー用DIV */
+#column-menu {
+   position:absolute;
+   z-index:99;
+   background-color:white;
+   border:2px solid grey;
+}
+
+/* カラム選択メニュー用DIV */
+#column-select-menu {
+   position:absolute;
+   z-index:99;
+   background-color:white;
+   border:2px solid grey;
+   padding:20px;
+}
+div.column-select-column-div {float:left;
+   width:24%;
+   overflow: hidden;
+   cursor: pointer;
+}
+lumn-select-menu hr,br {clear:both;
+   margin-top:10px;
+}
+
+/* 詳細ポップアップ */
+#popup-taskview {
+   overflow: auto;
+   position:absolute;
+   z-index:99;
+   background-color:white;
+   border:2px solid grey;
+   padding:10px;
+}
+#popup-taskview h5 {
+   margin-top: 6px;
+   margin-bottom:3px;
+   color:gray;
+}
+
+/* アクションダイアログ用DIV */
+#dialog-div {
+   position:absolute;
+   z-index:99;
+   background-color:#F9F8E3;
+   border:2px solid grey;
+   padding:12px;
+   overflow: auto;
+}
+#dialog-div > div.form, div.taskList {
+   float: left;
+   width: 48%;
+   padding-right: 10px;
+}
+#dialog-div h3 {
+   margin-top: 6px;
+   margin-bottom:10px;
+   color:blue;
+}
+#dialog-div h4 {
+   margin-top: 6px;
+   margin-bottom:6px;
+   color:gray;
+}
+#dialog-div table {
+   width:100%;
+}
+#dialog-div label {
+   margin-left: 10px;
+}
+#dialog-div div.dialog-button-panel {
+   margin-top: 10px;
+   text-align: center;
+}
+
+/* 処理中ダイアログ */
+#wait-background-div {
+   position: absolute;
+   z-index: 100;
+   background-color: black;
+   opacity: 0.4;
+}
+#wait-dialog-div {
+   position: absolute;
+   z-index: 101;
+   background-color: #F9F8E3;
+   border:2px solid grey;
+   padding:12px;
+   overflow: auto;
+}
+#wait-dialog-div h3 {
+   margin-top: 6px;
+   margin-bottom:10px;
+   color:black;
+   text-align: center;
+}
+#wait-dialog-div div.progressbar {
+   position: relative;
+   width: 80%;
+   height: 30px;
+   background-color: white;
+   margin: 0 auto;
+   border:2px solid grey;
+   overflow: hidden;
+}
+#wait-dialog-div div.progress {
+   position: absolute;
+   top: 0px;
+   left: 0px;
+   height: 30px;
+   background-color: #ddd;
+   z-index: 110;
+}
+#wait-dialog-div div.progress-label {
+   position: absolute;
+   top: 2px;
+   z-index: 111;
+}
+
+/* その他 */
+.invisible {
+   display:none;
+}
