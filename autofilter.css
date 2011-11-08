@@ -117,6 +117,16 @@ lumn-select-menu hr,br {clear:both;
    color:gray;
 }
 
+/* 集計ポップアップ */
+#popup-report {
+   overflow: auto;
+   position:absolute;
+   z-index:99;
+   background-color:white;
+   border:2px solid grey;
+   padding:10px;
+}
+
 /* アクションダイアログ用DIV */
 #dialog-div {
    position:absolute;

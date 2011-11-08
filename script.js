@@ -4,9 +4,9 @@
 //    Copyright (c) 2011 Masashi Sakurai. All rights reserved.
 //    http://www.opensource.org/licenses/mit-license.php
 // 
-// Time-stamp: <2011-07-23 00:39:17 sakurai>
+// Time-stamp: <2011-11-09 01:02:25 sakurai>
 
-function $(id) {
+function $ID(id) {
     return document.getElementById(id);
 }
 
@@ -287,7 +287,7 @@ function buildTaskTable() {
 
     var components = 
         (function(){
-             var container    = $("container");
+             var container    = $ID("container");
              var pagerTables  = $X("//table[@class='pager']");
              var pagerTds     = $X("//table[@class='pager']//td");
              var ret = {
@@ -297,7 +297,7 @@ function buildTaskTable() {
                  searchPanel  : pagerTds[1],
                  summaryPanel : pagerTds[2],
                  actionPanel  : pagerTds[3],
-                 mainTable    : $("issues-table")
+                 mainTable    : $ID("issues-table")
              };
              return ret;
          })();
@@ -320,10 +320,11 @@ function buildTaskTable() {
     
     function loadTaskList() {
         afTable.setBusyState(true);
-        components.statusPanel.innerHTML = "[ 読み込み中 ... ]";
+		var imgurl = chrome.extension.getURL("icons/loading.gif");
+        components.statusPanel.innerHTML = "[ 読み込み中 ... <img src='"+imgurl+"' /> ]";
         retrieveTaskObjectList( 
             function(taskList){
-                components.statusPanel.innerHTML = "[ 処理中 ... ]";
+                components.statusPanel.innerHTML = "[ 処理中 ...  <img src='"+imgurl+"' /> ]";
                 afTable.updateTaskList(taskList);
                 if (initialSetting) {
                     afTable.setTableStatus(initialSetting);
@@ -346,7 +347,7 @@ function buildTaskTable() {
     function overrideContents() {
         components.statusPanel.innerHTML  = "";
         components.summaryPanel.innerHTML = "";
-        components.actionPanel.appendChild($("exportForm"));
+        components.actionPanel.appendChild($ID("exportForm"));
 
         //ボタン消去
         $X("//td[@class='ico']/a").forEach( function(i, index) {
@@ -734,7 +735,7 @@ function CustomFilterOption(filterTitle,optionId,testFunc) {
 //# 表示からカラム設定用の簡易ダイアログ表示
 function showTableSettingMenu(event, components, afTable) {
     var self = this;
-    var menuElm = $("columns-select-menu");
+    var menuElm = $ID("columns-select-menu");
     if (menuElm) {
         document.body.removeChild(menuElm);
     }
@@ -842,7 +843,7 @@ function ActionDialog(components,afTable) {
 }
 ActionDialog.prototype.show = function() {
     var self = this;
-    var dialogElm = $('dialog-div');
+    var dialogElm = $ID('dialog-div');
     if (dialogElm) {
         document.body.removeChild(dialogElm);
     }
@@ -1485,9 +1486,9 @@ function WaitDialog(title, countNum) {
     var self = this;
 
     //以前のゴミ削除
-    var bgElm = $('wait-background-div');
+    var bgElm = $ID('wait-background-div');
     bgElm && document.body.removeChild(bgElm);
-    var dialogElm = $('wait-dialog-div');
+    var dialogElm = $ID('wait-dialog-div');
     dialogElm && document.body.removeChild(dialogElm);
     
     //サイズ計算
@@ -1765,8 +1766,8 @@ function AFTable(_tableElm, _statusElm, _tableColumnModel, _taskList) {
                         values: [], //カラム内の値一覧（AF用）
                         filter: null, //AF用フィルター候補
                         //nullですべて, filter用インタフェース(test,title)
-                        th: $(columnModel.thId),
-                        tf: $(columnModel.tfId)
+                        th: $ID(columnModel.thId),
+                        tf: $ID(columnModel.tfId)
                     };
                 });
             return model;
@@ -1926,7 +1927,7 @@ function AFTable(_tableElm, _statusElm, _tableColumnModel, _taskList) {
                     }
                 });
             
-            var selectionTh = $("th-selection");
+            var selectionTh = $ID("th-selection");
             selectionTh.className = ["p_selection", (self.selectionFilter) ? "autofilter-filter" : ""].join(" ");
         },
         summary: function() {
@@ -2328,7 +2329,7 @@ function AFTable(_tableElm, _statusElm, _tableColumnModel, _taskList) {
     function MenuManager(thElm) {
         var self = this;
         var menuMargin = 35;
-        var menuElm = $('column-menu');
+        var menuElm = $ID('column-menu');
         if (menuElm) {
             document.body.removeChild(menuElm);
         }
@@ -2421,7 +2422,7 @@ function AFTable(_tableElm, _statusElm, _tableColumnModel, _taskList) {
     
     //選択列メニュー表示
     function showTHSelectionMenu(event) {
-        var th = $("th-selection");
+        var th = $ID("th-selection");
         var menu = new MenuManager(th);
         menu.setWidth(230);
         menu.setActions( makeSelectionMenuActions(), function() {
@@ -2632,6 +2633,80 @@ function AFTable(_tableElm, _statusElm, _tableColumnModel, _taskList) {
         this.active = false;
 		this.wide = false;
 
+		// mouse hover event
+        tableColumnModel.each(function( columnId, model ) {
+            if (model.reportStrategy) {
+                var elm = $ID(model.tfId);
+				if (elm) {
+					elm.addEventListener(
+						"mouseover", function(ev) {
+							showPopup(model);
+						},false);
+					elm.addEventListener(
+						"mouseout", function(ev) {
+							hidePopup();
+						},false);
+				}
+			}});
+
+		var popupElm = null;
+		var showPopup = function(model) {
+            if (!tableState.canShowPopup()) {
+                //他の機能が動作中のときは出さない
+                return;
+            }
+			var dataElm = $ID(model.tfId);
+			if (!dataElm || !dataElm.data) return;
+			var data = dataElm.data;//elementに値埋め込み
+            if (popupElm) {
+                document.body.removeChild(popupElm);
+            }
+            //Popupの外枠
+            popupElm = E("div",{id: "popup-report"});
+            var pos = cumulativeOffset(tbodyElm);
+            var size = {w: tbodyElm.offsetWidth, h: tbodyElm.offsetHeight};
+            size.innerWidth = size.w * 0.6;
+            size.space = size.w * 0.04;
+			// Title
+            popupElm.appendChild(E("h4",{textContent:model.columnName}));
+			// 内容はあとで入れる (jqplotがそうなっているので...)
+            var chartElm = E("div",{id:"report-chart"});
+            popupElm.appendChild(chartElm);
+            // 位置計算
+			var xx = dataElm.offsetLeft + dataElm.offsetWidth/2;
+			xx = xx - size.innerWidth/2;
+			if (xx < size.space) {
+				xx = size.space;
+			} else if (xx > (size.w - size.space - size.innerWidth)) {
+				xx = (size.w - size.space - size.innerWidth);
+			}
+            popupElm.style.left = (pos[0] + xx)+"px";
+            popupElm.style.top  = (pos[1]+10)+"px";
+            popupElm.style.width = size.innerWidth+"px";
+            // 表示
+            document.body.appendChild(popupElm);
+
+			var plot = jQuery.jqplot(
+				'report-chart',
+				[data.map(function(v) {return [v.key,v.count];})], {
+					seriesDefaults: {
+						renderer: jQuery.jqplot.PieRenderer,
+						rendererOptions: {
+							showDataLabels: true,
+							dataLabels: data.map(function(v) {return v.key+" "+v.count;}),
+						}
+					},
+					legend: { show:true, location: 'e' }
+				}
+			);
+		};
+		var hidePopup = function() {
+            if (popupElm) {
+                document.body.removeChild(popupElm);
+                popupElm = null;
+            }
+		};
+
         this.updateReports = function(tasklist) {
             if (!this.active) return;
             var models = [], data = [], ids = []; // 順番は維持
@@ -2650,9 +2725,13 @@ function AFTable(_tableElm, _statusElm, _tableColumnModel, _taskList) {
             }
             for (var j = 0; j < mnum; j++) {
                 var result = models[j].reportStrategy.reduce( data[j] );
-                var elm = $(models[j].tfId);
-                elm.innerHTML = result.replace(/\n/g,"<br />");
-                elm.title = result.replace(/\n/g," / ");
+				var resultStr = models[j].reportStrategy.format( result );
+                var elm = $ID(models[j].tfId);
+				if (result && result[0] && result[0]['key']) {
+					elm.data = result; //集計だけ記録する
+				}
+                elm.innerHTML = resultStr.replace(/\n/g,"<br />");
+                elm.title = resultStr.replace(/\n/g," / ");
             }
         };
 
@@ -3024,8 +3103,12 @@ BacklogTask.defaultReportStrategies = {
                     }
                 }
             }
-            return "合計 "+sum+"\n[ "+count+" / "+values.length+" ]"
-        }},
+            return {sum: sum ,count: count, total:values.length};
+        },
+		format: function(values) {
+            return "合計 "+values.sum+"\n[ "+values.count+" / "+values.total+" ]";
+		}
+	},
     sumFloat: {
         map: function(key, task) {
             var h = task[key];
@@ -3041,8 +3124,12 @@ BacklogTask.defaultReportStrategies = {
                     }
                 }
             }
-            return "合計 "+sum+"\n[ "+count+" / "+values.length+" ]"
-        }},
+            return {sum: sum ,count: count, total:values.length};
+        },
+		format: function(values) {
+            return "合計 "+values.sum+"\n[ "+values.count+" / "+values.total+" ]";
+		}
+	},
     count: {
         map: function(key, task) {
             var h = task[key];
@@ -3063,11 +3150,15 @@ BacklogTask.defaultReportStrategies = {
                     }
                 }
                 keys.sort(function(i,j) { return count[j]-count[i]; });
-                return keys.map(function(key) { return key+": "+count[key]; })
-                    .join("\n");
+                return keys.map(function(key) { return {key:key,count:count[key]};});
             }
-            return "なし";
-        }}
+            return null;
+        },
+		format: function(values) {
+			if (!values) return "なし";
+            return values.map(function(val) { return val.key+": "+val.count; }).join("\n");
+		}
+	}
 };
 BacklogTask.reportStrategies = {
     estimatedHours  : BacklogTask.defaultReportStrategies.sumFloat,
@@ -3090,39 +3181,39 @@ var BacklogHTML = {};
 
 BacklogHTML.getCSVURL = function getCSVURL() {
     var url = location.href.match(/^https:\/\/[^/]+/)+"/csvExportIssue/Backlog-Issues-autofilter.csv";
-var form = $("exportForm");
-var elements = form.elements;
-var queryComponents = [];
-for(var i=0, j=elements.length; i<j; i++) {
-    queryComponents.push(serialize(elements[i]));
-}
-return url+"?"+queryComponents.join("&");
-
-function serialize(element) {
-    if (element.type == "select") {
-        return serializeSelect(element);
-    } else {
-        var key = element.name;
-        var value = element.value;
-        return encodeURIComponent(key)+"="+encodeURIComponent(value);
+    var form = $ID("exportForm");
+    var elements = form.elements;
+    var queryComponents = [];
+    for(var i=0, j=elements.length; i<j; i++) {
+        queryComponents.push(serialize(elements[i]));
     }
-}
-function serializeSelect(select) {
-    var value = [];
-    var key = encodeURIComponent(select.name);
-    for (var i = 0; i < element.length; i++) {
-        var opt = element.options[i];
-        if (opt.selected) {
-            var t = opt.value || opt.text;
-            value.push(key+"="+encodeURIComponent(t));
+    return url+"?"+queryComponents.join("&");
+    
+    function serialize(element) {
+        if (element.type == "select") {
+            return serializeSelect(element);
+        } else {
+            var key = element.name;
+            var value = element.value;
+            return encodeURIComponent(key)+"="+encodeURIComponent(value);
         }
     }
-    return value.join("&");
-}
+    function serializeSelect(select) {
+        var value = [];
+        var key = encodeURIComponent(select.name);
+        for (var i = 0; i < element.length; i++) {
+            var opt = element.options[i];
+            if (opt.selected) {
+                var t = opt.value || opt.text;
+                value.push(key+"="+encodeURIComponent(t));
+            }
+        }
+        return value.join("&");
+    }
 }
 
 BacklogHTML.getAPIURL = function getAPIURL() {
-    var href = $('navi-home').href;
+    var href = $ID('navi-home').href;
     var m = href.match(/^(.*)\/projects/);
     if (m) return m[1]+"/XML-RPC";
     return null;
@@ -3135,7 +3226,7 @@ BacklogHTML.getProjectID = function getProjectID() {
 }
 
 BacklogHTML.getProjectKey = function getProjectKey() {
-    var href = $('navi-home').href;
+    var href = $ID('navi-home').href;
     var m = href.match(/^.*projects\/([^?]*)/);
     if (m) return m[1];
     return null;
@@ -3190,7 +3281,7 @@ XMLRPC.prototype = {
 
 var BacklogAPI = {
     url: (function () {
-        var href = $('navi-home').href;
+        var href = $ID('navi-home').href;
         var m = href.match(/^(.*)\/projects/);
         if (m) return m[1]+"/XML-RPC";
         return null;

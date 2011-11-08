@@ -1,13 +1,16 @@
 {
 	"name": "Backlog Autofilter",
-	"version": "1.1",
+	"version": "1.2.0",
 	"icons": { "128": "icons/af128.png", "48": "icons/af48.png" },
 	"description": "Autofilter UI for Backlog",
 	"content_scripts": [ {
 		"exclude_globs": [  ],
 		"include_globs": [  ],
-        "css": ["autofilter.css","jscalendar/calendar-blue.R20110417_3.css"],
+        "css": ["autofilter.css",
+                "jscalendar/calendar-blue.R20110417_3.css",
+                "jquery.jqplot.css"],
 		"js": [ "script.js", 
+                "jquery.js", "jquery.jqplot.js", "jqplot.pieRenderer.js",
 				"jscalendar/calendar.R20110417_3.js",
 				"jscalendar/calendar-setup.R20110417_3.js",
 				"jscalendar/calendar-en.R20110417_3.js",
