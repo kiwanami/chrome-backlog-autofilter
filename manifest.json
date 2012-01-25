@@ -1,6 +1,6 @@
 {
 	"name": "Backlog Autofilter",
-	"version": "1.2.0",
+	"version": "1.2.3",
 	"icons": { "128": "icons/af128.png", "48": "icons/af48.png" },
 	"description": "Autofilter UI for Backlog",
 	"content_scripts": [ {

@@ -4,7 +4,7 @@
 //    Copyright (c) 2011 Masashi Sakurai. All rights reserved.
 //    http://www.opensource.org/licenses/mit-license.php
 // 
-// Time-stamp: <2011-11-09 01:02:25 sakurai>
+// Time-stamp: <2012-01-25 23:27:34 sakurai>
 
 function $ID(id) {
     return document.getElementById(id);
@@ -22,6 +22,10 @@ function $X(xpath, node) {
 
 function $$(tagName,cssClass) {
     return $X("//"+tagName+"[@class='"+cssClass+"']");
+}
+
+function ICON(path) {
+	return chrome.extension.getURL(path);
 }
 
 function xmlhttpRequest(param) {
@@ -320,7 +324,7 @@ function buildTaskTable() {
     
     function loadTaskList() {
         afTable.setBusyState(true);
-		var imgurl = chrome.extension.getURL("icons/loading.gif");
+		var imgurl = ICON("icons/loading.gif");
         components.statusPanel.innerHTML = "[ 読み込み中 ... <img src='"+imgurl+"' /> ]";
         retrieveTaskObjectList( 
             function(taskList){
@@ -355,7 +359,8 @@ function buildTaskTable() {
         });
 
         // NAVIボタン
-        var aa = $X("id('naviBar')//a");
+        var aa = $X("id('projectNav')//a");
+		if (aa.length ==0) aa = $X("id('naviBar')//a");
         [
             E("span",{textContent:" "}),
             E("a",{href:aa[0].href,textContent:"[Home]",
@@ -379,7 +384,7 @@ function buildTaskTable() {
     
     function setupSettingMenu() {
         //設定ボタン
-        var img = E("img",{src:"/images/common/icons/ico_management_18.gif",alt:"表示設定"});
+        var img = E("img",{src:ICON("icons/ico_management_gear.png"),alt:"表示設定"});
         var a = E("a",{href:"javascript:void(0);",alt:"表示設定"},[img]);
         components.actionPanel.appendChild(a);
         components.settingButton = a;
@@ -522,9 +527,9 @@ function buildTaskTable() {
                         return "<div class=\"issue-status-"+this.statusId+"\">"+this.statusName+"</div>";
                     },
                     priorityName: function() {
-                        return "<img src=\"/images/common/icons/ico_priority_"+
-                            this.priorityId+".gif\"/><span class=\"invisible\">"+
-                            this.priorityName+"</span>";
+                        return "<img src=\""+
+							ICON("icons/icon_priority_"+this.priorityId+".png")+
+							"\"/><span class=\"invisible\">"+this.priorityName+"</span>";
                     }
                 });
 
@@ -1244,7 +1249,7 @@ function execActionChangeLimit(event,components,afTable) {
     dialog.form = function(formElm,addRow) {
         limitElm = E("input",{type:"text",name:"limitDate",id:"limitDate",size:10});
         var spanElm = E("span");
-        spanElm.innerHTML = "<a href='javascript:void(0);' id='limitDateCalendar'><img src='/images/common/icons/ico_calendar02.gif' alt='' /><span>カレンダーから選択</span></a>";
+        spanElm.innerHTML = "<a href='javascript:void(0);' id='limitDateCalendar'><img src='"+ICON("icons/ico_calendar02.gif")+"' alt='' /><span>カレンダーから選択</span></a>";
         spanElm.insertBefore(limitElm,spanElm.firstChild);
         addRow("期限日：",spanElm);
         commentElm = E("textarea",{name:"comment",rows:5},[]);
@@ -2692,11 +2697,17 @@ function AFTable(_tableElm, _statusElm, _tableColumnModel, _taskList) {
 					seriesDefaults: {
 						renderer: jQuery.jqplot.PieRenderer,
 						rendererOptions: {
+							dataLabelPositionFactor: 0.74,
+							startAngle: 270,
 							showDataLabels: true,
-							dataLabels: data.map(function(v) {return v.key+" "+v.count;}),
+							dataLabels: data.map(function(v) {return v.key+" "+v.count+v.unit;}),
 						}
 					},
-					legend: { show:true, location: 'e' }
+					legend: {
+						numberRows: 10,
+						show:true,
+						location: 'e' 
+					}
 				}
 			);
 		};
@@ -3103,7 +3114,7 @@ BacklogTask.defaultReportStrategies = {
                     }
                 }
             }
-            return {sum: sum ,count: count, total:values.length};
+            return {sum: sum ,count: count, total:values.length,unit:""};
         },
 		format: function(values) {
             return "合計 "+values.sum+"\n[ "+values.count+" / "+values.total+" ]";
@@ -3124,7 +3135,7 @@ BacklogTask.defaultReportStrategies = {
                     }
                 }
             }
-            return {sum: sum ,count: count, total:values.length};
+            return {sum: sum ,count: count, total:values.length,unit:""};
         },
 		format: function(values) {
             return "合計 "+values.sum+"\n[ "+values.count+" / "+values.total+" ]";
@@ -3150,7 +3161,7 @@ BacklogTask.defaultReportStrategies = {
                     }
                 }
                 keys.sort(function(i,j) { return count[j]-count[i]; });
-                return keys.map(function(key) { return {key:key,count:count[key]};});
+                return keys.map(function(key) { return {key:key,count:count[key],unit:""};});
             }
             return null;
         },
@@ -3158,11 +3169,55 @@ BacklogTask.defaultReportStrategies = {
 			if (!values) return "なし";
             return values.map(function(val) { return val.key+": "+val.count; }).join("\n");
 		}
+	},
+    sumByPerson: {
+        map: function(key, task) {
+            var h = task[key];
+            h = (h == "" || h === null || h === undefined) ? null : parseFloat(h);
+			var name = task["assignerName"];
+			return [name,h]; // return a tuple
+        },
+        reduce: function(values) {
+            var counts = {}, sums = {}, keys = [];
+            if (values) {
+                for (var i=0,j=values.length; i<j; i++) {
+                    var tuple = values[i];
+					var name = tuple[0];
+					var val = tuple[1];
+                    if (val !== null) {
+                        var cc = counts[name]
+                        if (cc) {
+							counts[name] = cc+1;
+							sums[name] += val;
+						} else {
+                            counts[name] = 1;
+							sums[name] = val;
+                            keys.push(name);
+                        }
+                    }
+                }
+                keys.sort(function(i,j) { return sums[j]-sums[i]; });
+                return keys.map(function(key) { 
+					return {key:key, count:sums[key], unit:"h", rows:counts[key]};
+				});
+            }
+            return null;
+        },
+		format: function(values) {
+			if (!values) return "なし";
+			var totalSum = 0;
+			values.forEach( function(item, index) {
+				totalSum += item.count;
+			});
+            return "合計:"+totalSum+"h\n"+values.map(function(val) {
+				return val.key+": "+val.count+"h("+val.rows+")";
+			}).join("\n");
+		}
 	}
 };
 BacklogTask.reportStrategies = {
-    estimatedHours  : BacklogTask.defaultReportStrategies.sumFloat,
-    actualHours     : BacklogTask.defaultReportStrategies.sumFloat,
+    estimatedHours  : BacklogTask.defaultReportStrategies.sumByPerson,
+    actualHours     : BacklogTask.defaultReportStrategies.sumByPerson,
     issueTypeName   : BacklogTask.defaultReportStrategies.count,
     statusName      : BacklogTask.defaultReportStrategies.count,
     priorityName    : BacklogTask.defaultReportStrategies.count,
